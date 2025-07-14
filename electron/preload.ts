@@ -1,0 +1,33 @@
+import { ipcRenderer, contextBridge } from 'electron'
+
+// --------- Expose some API to the Renderer process ---------
+contextBridge.exposeInMainWorld('ipcRenderer', {
+  on(...args: Parameters<typeof ipcRenderer.on>) {
+    const [channel, listener] = args
+    return ipcRenderer.on(channel, (event, ...args) => listener(event, ...args))
+  },
+  off(...args: Parameters<typeof ipcRenderer.off>) {
+    const [channel, ...omit] = args
+    return ipcRenderer.off(channel, ...omit)
+  },
+  send(...args: Parameters<typeof ipcRenderer.send>) {
+    const [channel, ...omit] = args
+    return ipcRenderer.send(channel, ...omit)
+  },
+  invoke(...args: Parameters<typeof ipcRenderer.invoke>) {
+    const [channel, ...omit] = args
+    return ipcRenderer.invoke(channel, ...omit)
+  },
+
+  // You can expose other APTs you need here.
+  // ...
+})
+
+// --------- Expose Wii Game Builder API ---------
+contextBridge.exposeInMainWorld('electronAPI', {
+  buildWiiGame: (buildData: any) => ipcRenderer.invoke('build-wii-game', buildData),
+  openDevTools: () => ipcRenderer.invoke('open-dev-tools'),
+  saveProject: (projectData: any) => ipcRenderer.invoke('save-project', projectData),
+  loadProject: () => ipcRenderer.invoke('load-project'),
+  exportGame: (gameData: any) => ipcRenderer.invoke('export-game', gameData)
+})
